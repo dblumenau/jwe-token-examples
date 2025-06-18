@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 using System.Linq;
 using System.Security.Cryptography;
@@ -9,18 +10,63 @@ class JWETokenAnalyzer
 {
     static void Main(string[] args)
     {
-        // Working token
-        string workingToken = "eyJhbGciOiJSU0EtT0FFUC0yNTYiLCJlbmMiOiJBMjU2R0NNIiwiY3R5IjoiSldUIn0.cK8s3O0bLQfhhFxxjbE6usQfPqXf2guUG9LHFhphr0whAOSY-sGJzcFZANorggjLB5viF341vgyNZ2qGAc9dIyMWBJ5ISFj47lngM_dBiQsnNIritMJSoJjyBwiArTg9aHrzK6Ja_6H6T_VgZq40O9_4BxpDOR7a9A1sYxt6v2yxB601inIXcr67q7ObTRly9dIzCc2Jnf0kyEJaLA7R_Kh9LBp3f5vj7sBotmnPDfTBW-xioxGbSpjfycu5S2OxK1E8Wmc54P8WG6BMEv-56_bGwI8Qyb44FSjy0fEzHsqPhW8Xjfb2RXjXAGDbL2TNjJRQ45FmgDtn6AzMApDfsw.covQyuFmnNSl1Utt.hSY0jGz3ZnJRYFpdpYhgVCTofXJVJh32yXncxwjekT9SbUsy1qslAskQcpPqDlSYdL9Syw41qQwt067Z06wbRkHUVwW8lszE4A7YdBJsmh_Y2qGZtu9jKwgjozrwY7FIoS4qJRFZneJ3jFjqyT4ruug_BFuV_dC9udaMPRNeIt-7P6XAf0-DokzRI7NpXj-XuFggatkCw5HaF9vu4DkiVXqbqzuEmeXyqgyBb5lIkWcFf1AaB6KKRdoS4jqTNSyEbfnbOyh9ATZ8YbRrU95fJTw5Z_fTKcWsHHuGI2GjU0HPbbtkpjY8QVF9k7SrdXBLLQl3RixWrRsNLR4fwcfvSJFg6LMrKOrjOrdBvUmaQO7KfHjWfxHyuU3rvAiY2xWDIIOxmGBaVIJpwvxfyav-IZf049WOXI-Rkh_pmbjQRpm7giNegzoCrLRjK0ffE-yqUmy17FgErqSld0sgPsVa1OZ8UPFOUCtQCGK6iZbkWig9KWRuivNst3r2-HQO3G-e8hC3lnw5b4GNAmuye9qUAjo5BMzabowjev3gZSlvBXfxK-AyE1rdwXyUBZhN9wD_oRwqIZ0-CFzgHnNtHjVteVw2DH3zeZtCsKq8rR-A68nXOBEDSamgUjvXR7HqHtLmHXiYQGdJ8QgYA-MTYDJDYjRAcGmsLsukZjwklivK6CRHdY5gWo64YkdUvkhlZf9F9_GRTYvTb3kv2pYaxlk.lbIyVfldBlf4CCEDF_wygA";
-
-        // Not working token
-        string notWorkingToken = "eyJhbGciOiJSU0EtT0FFCI0yNTYiLCJlbmMiOiJBMjU2R0NNIiwiY3R5IjoiSldUIn0.FAks9MskT5xPX9-AxSOJ0GWdmO4uP-rUOUlIL2ET2RpgvQPX3fH8B0jxVdZUrVAg7WbVJhiN4nSemyKeEneQHLATS3PK5HS-p8SteDcIl5y6OwMf2iMchJyZE4B_WRWNk9xRA97t2oAKlIGjhFWv6y2-Ga3eVqdCIjXEFLZRnTpWY5t24gDcQ81bs0X47mJ9I808Gxl_ieo2D6r5znvqP_Y-a5RNGhaf3O9NfDzy9luZHbEO4gU95WhZTvb4fGZTyfWs-vt8ra2WKIeyrJtSQMMc9Lz0dzSx5xCOFs_NQBZegASs2cX34TWqCCpFXglH493B0QXHgUuutVd2wSaMAw.o-DPrt5-TrFB837N.0-JMlKsLMh0tav1YVQsUMx1AMX9vyQG0dl9_Vwi0btQvXm5AjXEVFfSmv2Gj7YlBeuLazYdTKKspNwqgot_9MF0URkkoLo3KEn-D9L2udIvxSjXtjC92F4oRCuOU7ID3xuGxDnfP-2UPRbyF7HvdjTLdKqLEgUaRyTJ5ksXTwrnjdsqkdajX_0Z3vPbHJb6uhp5bhjVtqFz0SShFZSEzfTC7h0wVZZZ22ZRdkxbcXJPn8f0JCfSMZmEqIxWlKMpuTiqGWaL2S7tHt-8OQObdM_u1YyLOMiaoD08MX06y6R4TShkJLZHhr_ZCssa3IRRpAeEusBDmHbayxiNNFrnjDV5GliIaVAvHUhqCPL3BB0Bfb0Bx5ZrNUeMlJi3ZUQTtnLmfZwIZyd9uxTYN7IqHlSnnO8_r5IJry_MeYBP3Af3kQrw77LPQzTDrd0KuZRRB3GpkBY0Yr9X4OcX1kzRGGE4JPkxx225DGS894qc2863m364mOlJ8VQNz8QZTh5S0WGL1ThKtMhH1NKdIyVZtgyyDLPfpZkSinWxoCSGasJcdMtpsbZNqFfED25Brs3_t0i11UbJj9b1-gE_kbn-x9IxK8LTcdSOQhZcG9aUW4rovOjacDC_1-nerTQkzJJjna5rleVznSqjL-gU9O5OhgPK90OzE1FmnJ3X8_4Gx4u6kldLk7kBsofDiZzfSg7O2n4xnnMEnZUCsdMTQX_clWwnyzdv5fIMhF3wXlQ5XStXh2F28ZCA7glSLt2lF1fj8FFaH4qMYfYi0O5XvG4ccX7vVPb6Vb62kEgCZdQrsdqERP2hkFrt7uOE.xQfoUjXTumFLwbfXBkOC9A";
-
         Console.WriteLine("=== JWE Token Analyzer - Extended Analysis ===\n");
 
-        AnalyzeTokenExtended(workingToken, "Working");
-        AnalyzeTokenExtended(notWorkingToken, "Not Working");
+        string tokenA = null;
+        string tokenB = null;
 
-        CompareTokens(workingToken, notWorkingToken);
+        // Check if tokens are provided as command line arguments first
+        if (args.Length >= 2)
+        {
+            Console.WriteLine("Using tokens from command line arguments...");
+            tokenA = args[0];
+            tokenB = args[1];
+        }
+        else
+        {
+            // Try to load tokens from files
+            string tokenAPath = "token_a.txt";
+            string tokenBPath = "token_b.txt";
+            
+            if (!File.Exists(tokenAPath))
+            {
+                Console.WriteLine($"❌ Error: Required file not found: {tokenAPath}");
+                Console.WriteLine("\nUsage:");
+                Console.WriteLine("  1. Create 'token_a.txt' and 'token_b.txt' in the current directory");
+                Console.WriteLine("  2. Or pass two tokens as command line arguments: dotnet run <token_a> <token_b>");
+                Environment.Exit(1);
+            }
+            
+            if (!File.Exists(tokenBPath))
+            {
+                Console.WriteLine($"❌ Error: Required file not found: {tokenBPath}");
+                Console.WriteLine("\nUsage:");
+                Console.WriteLine("  1. Create 'token_a.txt' and 'token_b.txt' in the current directory");
+                Console.WriteLine("  2. Or pass two tokens as command line arguments: dotnet run <token_a> <token_b>");
+                Environment.Exit(1);
+            }
+            
+            try
+            {
+                tokenA = File.ReadAllText(tokenAPath).Trim();
+                Console.WriteLine($"✓ Loaded token A from: {tokenAPath}");
+                
+                tokenB = File.ReadAllText(tokenBPath).Trim();
+                Console.WriteLine($"✓ Loaded token B from: {tokenBPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error loading token files: {ex.Message}");
+                Environment.Exit(1);
+            }
+        }
+
+        Console.WriteLine("\n" + new string('-', 80) + "\n");
+
+        AnalyzeTokenExtended(tokenA, "Token A");
+        AnalyzeTokenExtended(tokenB, "Token B");
+
+        CompareTokens(tokenA, tokenB);
     }
 
     static void AnalyzeTokenExtended(string token, string label)
@@ -139,81 +185,111 @@ class JWETokenAnalyzer
         Console.WriteLine($"Current time: {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
     }
 
-    static void CompareTokens(string workingToken, string notWorkingToken)
+    static void CompareTokens(string tokenA, string tokenB)
     {
         Console.WriteLine($"\n\n{new string('=', 80)}");
-        Console.WriteLine("=== Token Comparison ===");
+        Console.WriteLine("=== Token Comparison: A vs B ===");
         Console.WriteLine($"{new string('=', 80)}\n");
 
-        string[] workingParts = workingToken.Split('.');
-        string[] notWorkingParts = notWorkingToken.Split('.');
+        string[] partsA = tokenA.Split('.');
+        string[] partsB = tokenB.Split('.');
 
         string[] componentNames = {"Header", "Encrypted Key", "IV", "Ciphertext", "Auth Tag"};
 
         Console.WriteLine("=== Component Length Differences ===");
-        for (int i = 0; i < componentNames.Length && i < workingParts.Length && i < notWorkingParts.Length; i++)
+        for (int i = 0; i < componentNames.Length && i < partsA.Length && i < partsB.Length; i++)
         {
-            int workingLen = workingParts[i].Length;
-            int notWorkingLen = notWorkingParts[i].Length;
+            int lenA = partsA[i].Length;
+            int lenB = partsB[i].Length;
             
-            string status = workingLen == notWorkingLen ? "SAME" : "DIFFERENT";
-            Console.WriteLine($"{componentNames[i],-20} Working: {workingLen,4} chars | Not Working: {notWorkingLen,4} chars | {status}");
+            string status = lenA == lenB ? "SAME" : "DIFFERENT";
+            Console.WriteLine($"{componentNames[i],-20} Token A: {lenA,4} chars | Token B: {lenB,4} chars | {status}");
         }
 
         // Compare headers character by character
         Console.WriteLine("\n=== Header Character Comparison ===");
-        string workingHeader = workingParts[0];
-        string notWorkingHeader = notWorkingParts[0];
+        string headerA = partsA[0];
+        string headerB = partsB[0];
         
-        Console.WriteLine($"Working header:     {workingHeader}");
-        Console.WriteLine($"Not working header: {notWorkingHeader}");
+        Console.WriteLine($"Token A header: {headerA}");
+        Console.WriteLine($"Token B header: {headerB}");
         
         Console.WriteLine("\nDifferences found at:");
-        int maxLen = Math.Max(workingHeader.Length, notWorkingHeader.Length);
+        int maxLen = Math.Max(headerA.Length, headerB.Length);
+        bool foundDifferences = false;
         
         for (int i = 0; i < maxLen; i++)
         {
-            char wChar = i < workingHeader.Length ? workingHeader[i] : '\0';
-            char nChar = i < notWorkingHeader.Length ? notWorkingHeader[i] : '\0';
+            char charA = i < headerA.Length ? headerA[i] : '\0';
+            char charB = i < headerB.Length ? headerB[i] : '\0';
             
-            if (wChar != nChar)
+            if (charA != charB)
             {
-                Console.WriteLine($"  Position {i}: Working='{wChar}' (0x{(int)wChar:X2}) vs NotWorking='{nChar}' (0x{(int)nChar:X2})");
+                Console.WriteLine($"  Position {i}: Token A='{charA}' (0x{(int)charA:X2}) vs Token B='{charB}' (0x{(int)charB:X2})");
+                foundDifferences = true;
             }
+        }
+        
+        if (!foundDifferences)
+        {
+            Console.WriteLine("  No differences found - headers are identical");
         }
 
         // Decode and compare headers
         Console.WriteLine("\n=== Decoded Header Comparison ===");
         try
         {
-            string workingDecoded = Base64UrlDecode(workingHeader);
-            string notWorkingDecoded = Base64UrlDecode(notWorkingHeader);
+            string decodedA = Base64UrlDecode(headerA);
+            string decodedB = Base64UrlDecode(headerB);
             
-            Console.WriteLine($"Working decoded: {workingDecoded}");
-            Console.WriteLine($"Not working decoded: {notWorkingDecoded}");
+            Console.WriteLine($"Token A decoded: {decodedA}");
+            Console.WriteLine($"Token B decoded: {decodedB}");
             
             // Show bytes at difference positions
-            byte[] workingBytes = Base64UrlDecodeBytes(workingHeader);
-            byte[] notWorkingBytes = Base64UrlDecodeBytes(notWorkingHeader);
+            byte[] bytesA = Base64UrlDecodeBytes(headerA);
+            byte[] bytesB = Base64UrlDecodeBytes(headerB);
             
             Console.WriteLine("\nByte differences:");
-            for (int i = 0; i < Math.Min(workingBytes.Length, notWorkingBytes.Length); i++)
+            bool foundByteDiffs = false;
+            for (int i = 0; i < Math.Min(bytesA.Length, bytesB.Length); i++)
             {
-                if (workingBytes[i] != notWorkingBytes[i])
+                if (bytesA[i] != bytesB[i])
                 {
-                    char wChar = (char)workingBytes[i];
-                    char nChar = (char)notWorkingBytes[i];
-                    Console.WriteLine($"  Byte {i}: Working=0x{workingBytes[i]:X2} ('{(char.IsControl(wChar) ? "?" : wChar.ToString())}') vs NotWorking=0x{notWorkingBytes[i]:X2} ('{(char.IsControl(nChar) ? "?" : nChar.ToString())}')");
+                    char charA = (char)bytesA[i];
+                    char charB = (char)bytesB[i];
+                    Console.WriteLine($"  Byte {i}: Token A=0x{bytesA[i]:X2} ('{(char.IsControl(charA) ? "?" : charA.ToString())}') vs Token B=0x{bytesB[i]:X2} ('{(char.IsControl(charB) ? "?" : charB.ToString())}')");
+                    foundByteDiffs = true;
                 }
             }
             
-            // Try to identify the exact problem
-            Console.WriteLine("\n=== Problem Analysis ===");
-            if (workingDecoded.Contains("RSA-OAEP-256") && !notWorkingDecoded.Contains("RSA-OAEP-256"))
+            if (!foundByteDiffs)
             {
-                Console.WriteLine("ISSUE FOUND: The algorithm field is corrupted in the not-working token.");
-                Console.WriteLine("Expected: \"alg\":\"RSA-OAEP-256\"");
-                Console.WriteLine("Actual: Contains invalid UTF-8 sequence where 'P-' should be");
+                Console.WriteLine("  No byte differences found");
+            }
+            
+            // Try to identify the exact problem
+            Console.WriteLine("\n=== Analysis ===");
+            bool headersDiffer = decodedA != decodedB;
+            if (headersDiffer)
+            {
+                Console.WriteLine("The headers are different between the two tokens.");
+                
+                // Check for the common RSA-OAEP-256 corruption
+                if ((decodedA.Contains("RSA-OAEP-256") && !decodedB.Contains("RSA-OAEP-256")) ||
+                    (!decodedA.Contains("RSA-OAEP-256") && decodedB.Contains("RSA-OAEP-256")))
+                {
+                    Console.WriteLine("Specific issue: The algorithm field differs between tokens.");
+                    Console.WriteLine($"Token A algorithm: {(decodedA.Contains("RSA-OAEP-256") ? "RSA-OAEP-256" : "Other/Corrupted")}");
+                    Console.WriteLine($"Token B algorithm: {(decodedB.Contains("RSA-OAEP-256") ? "RSA-OAEP-256" : "Other/Corrupted")}");
+                }
+                else
+                {
+                    Console.WriteLine("Headers have different content but both appear to be valid JSON.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Headers are identical. Any differences must be in other components.");
             }
         }
         catch (Exception ex)
@@ -221,32 +297,62 @@ class JWETokenAnalyzer
             Console.WriteLine($"Error comparing headers: {ex.Message}");
         }
 
-        // Check for invalid characters
+        // Check for invalid characters in both tokens
         Console.WriteLine("\n=== Base64URL Character Validation ===");
         string validBase64UrlChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
         
-        bool hasInvalidChars = false;
-        for (int i = 0; i < notWorkingToken.Length; i++)
+        Console.WriteLine("Token A:");
+        bool hasInvalidCharsA = false;
+        for (int i = 0; i < tokenA.Length; i++)
         {
-            char c = notWorkingToken[i];
+            char c = tokenA[i];
             if (c != '.' && !validBase64UrlChars.Contains(c))
             {
-                Console.WriteLine($"Invalid character '{c}' (0x{(int)c:X2}) at position {i}");
-                hasInvalidChars = true;
+                Console.WriteLine($"  Invalid character '{c}' (0x{(int)c:X2}) at position {i}");
+                hasInvalidCharsA = true;
             }
         }
-        
-        if (!hasInvalidChars)
+        if (!hasInvalidCharsA)
         {
-            Console.WriteLine("All characters are valid Base64URL characters.");
+            Console.WriteLine("  All characters are valid Base64URL characters.");
+        }
+        
+        Console.WriteLine("\nToken B:");
+        bool hasInvalidCharsB = false;
+        for (int i = 0; i < tokenB.Length; i++)
+        {
+            char c = tokenB[i];
+            if (c != '.' && !validBase64UrlChars.Contains(c))
+            {
+                Console.WriteLine($"  Invalid character '{c}' (0x{(int)c:X2}) at position {i}");
+                hasInvalidCharsB = true;
+            }
+        }
+        if (!hasInvalidCharsB)
+        {
+            Console.WriteLine("  All characters are valid Base64URL characters.");
         }
         
         // Summary
         Console.WriteLine("\n=== Summary ===");
-        Console.WriteLine("The not-working token has a corrupted JOSE header where the algorithm name");
-        Console.WriteLine("'RSA-OAEP-256' has been damaged. The characters 'UC' (which decode to 'P-')");
-        Console.WriteLine("have been replaced with 'CI' (which decode to invalid UTF-8 bytes).");
-        Console.WriteLine("This makes the header invalid JSON and prevents the token from being processed.");
+        if (headerA != headerB)
+        {
+            Console.WriteLine("The tokens have different headers.");
+        }
+        else
+        {
+            Console.WriteLine("The headers are identical. Differences exist in other components.");
+        }
+        
+        // List all differences
+        Console.WriteLine("\nComponent differences:");
+        for (int i = 0; i < componentNames.Length && i < partsA.Length && i < partsB.Length; i++)
+        {
+            if (partsA[i].Length != partsB[i].Length)
+            {
+                Console.WriteLine($"  - {componentNames[i]}: Token A ({partsA[i].Length} chars) vs Token B ({partsB[i].Length} chars)");
+            }
+        }
     }
     
     static bool HasBase64UrlPattern(byte[] bytes)
