@@ -17,6 +17,26 @@
 
 const crypto = require('crypto');
 const fs = require('fs');
+const path = require('path');
+
+// Simple .env file loader (since we're not using npm packages)
+function loadEnv() {
+    const envPath = path.join(__dirname, '..', '.env');
+    if (fs.existsSync(envPath)) {
+        const envContent = fs.readFileSync(envPath, 'utf8');
+        envContent.split('\n').forEach(line => {
+            const trimmed = line.trim();
+            if (trimmed && !trimmed.startsWith('#')) {
+                const [key, ...valueParts] = trimmed.split('=');
+                const value = valueParts.join('=');
+                process.env[key.trim()] = value.trim();
+            }
+        });
+    }
+}
+
+// Load environment variables
+loadEnv();
 
 class NodeJWEGenerator {
     constructor(signingPrivateKeyPath, encryptionPublicKeyPath) {
@@ -127,8 +147,27 @@ class NodeJWEGenerator {
     }
 }
 
+// Show usage if --help is passed
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+    console.log('\nUsage: node example_jwe_generation.js [subject]');
+    console.log('\nArguments:');
+    console.log('  subject    The subject (sub) claim for the JWT. Default: AF8F35F0-8DC3-4488-8D9D-2B2A663AFDED');
+    console.log('\nExample:');
+    console.log('  node example_jwe_generation.js 1234567890');
+    process.exit(0);
+}
+
 // Example usage
 try {
+    // Get subject from command line argument or use default
+    const args = process.argv.slice(2);
+    const subject = args[0] || 'AF8F35F0-8DC3-4488-8D9D-2B2A663AFDED';
+    
+    if (args.length > 0) {
+        console.log(`Using custom subject: ${subject}`);
+        console.log('');
+    }
+    
     // Use the same keys as your system
     const generator = new NodeJWEGenerator(
         'jwt_signing_private.pem',
@@ -143,7 +182,7 @@ try {
         exp: now + 3600,             // Expires in 1 hour
         iss: 'ISSUER',               // Issuer
         aud: 'AUDIENCE',             // Audience
-        sub: 'AF8F35F0-8DC3-4488-8D9D-2B2A663AFDED',  // Subject (external ID)
+        sub: subject,                // Subject (external ID)
     };
     
     console.log('Generating JWE token with payload:');
@@ -156,8 +195,10 @@ try {
     console.log(jwe);
     console.log('');
     
+    // Use APP_URL from .env or fallback to example.com
+    const appUrl = process.env.APP_URL || 'https://example.com';
     console.log('Test URL:');
-    console.log(`https://your-endpoint.com/?jwe=${encodeURIComponent(jwe)}`);
+    console.log(`${appUrl}/?jwe=${encodeURIComponent(jwe)}`);
     
 } catch (error) {
     console.error('Error:', error.message);

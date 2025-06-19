@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.IO;
+using System.Collections.Generic;
 
 /// <summary>
 /// C# JWE Token Generation Example
@@ -155,10 +156,55 @@ public class JWEGenerator : IDisposable
 /// </summary>
 public class Program
 {
+    /// <summary>
+    /// Simple .env file loader
+    /// </summary>
+    private static void LoadEnv()
+    {
+        var envPath = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.FullName, ".env");
+        if (File.Exists(envPath))
+        {
+            foreach (var line in File.ReadAllLines(envPath))
+            {
+                var trimmedLine = line.Trim();
+                if (!string.IsNullOrEmpty(trimmedLine) && !trimmedLine.StartsWith("#"))
+                {
+                    var parts = trimmedLine.Split('=', 2);
+                    if (parts.Length == 2)
+                    {
+                        Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
+                    }
+                }
+            }
+        }
+    }
     public static void Main(string[] args)
     {
+        // Check for help flag
+        if (args.Length > 0 && (args[0] == "--help" || args[0] == "-h"))
+        {
+            Console.WriteLine("Usage: dotnet run [subject]");
+            Console.WriteLine("\nArguments:");
+            Console.WriteLine("  subject    The subject (sub) claim for the JWT. Default: AF8F35F0-8DC3-4488-8D9D-2B2A663AFDED");
+            Console.WriteLine("\nExample:");
+            Console.WriteLine("  dotnet run 1234567890");
+            return;
+        }
+        
         try
         {
+            // Get subject from command line argument or use default
+            string subject = args.Length > 0 ? args[0] : "AF8F35F0-8DC3-4488-8D9D-2B2A663AFDED";
+            
+            if (args.Length > 0)
+            {
+                Console.WriteLine($"Using custom subject: {subject}");
+                Console.WriteLine();
+            }
+            
+            // Load environment variables
+            LoadEnv();
+            
             // Use the same keys as your system
             using var generator = new JWEGenerator(
                 "jwt_signing_private.pem",
@@ -174,7 +220,7 @@ public class Program
                 exp = now + 3600,             // Expires in 1 hour
                 iss = "ISSUER",               // Issuer
                 aud = "AUDIENCE",             // Audience
-                sub = "AF8F35F0-8DC3-4488-8D9D-2B2A663AFDED"  // Subject (external ID)
+                sub = subject                 // Subject (external ID)
             };
 
             Console.WriteLine("Generating JWE token with payload:");
@@ -187,8 +233,15 @@ public class Program
             Console.WriteLine(jwe);
             Console.WriteLine();
 
+            // Use APP_URL from .env or fallback to example.com
+            var appUrl = Environment.GetEnvironmentVariable("APP_URL");
+            if (string.IsNullOrEmpty(appUrl))
+            {
+                appUrl = "https://example.com";
+            }
+            
             Console.WriteLine("Test URL:");
-            Console.WriteLine($"https://your-endpoint.com/?jwe={Uri.EscapeDataString(jwe)}");
+            Console.WriteLine($"{appUrl}/?jwe={Uri.EscapeDataString(jwe)}");
 
         }
         catch (Exception ex)

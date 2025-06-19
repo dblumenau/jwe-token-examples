@@ -1,0 +1,15 @@
+{
+  "name": "jwe-token-node-example",
+  "version": "1.0.0",
+  "description": "Node.js JWE Token Generation Example",
+  "main": "example_jwe_generation.js",
+  "scripts": {
+    "start": "node example_jwe_generation.js",
+    "test": "node example_jwe_generation.js"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "author": "",
+  "license": "ISC"
+}
