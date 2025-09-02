@@ -87,7 +87,7 @@ If `APP_URL` is not set or is empty, the system will fall back to `https://examp
 
 # The URL endpoint for testing JWE tokens
 # Leave empty to use default fallback (https://example.com)
-APP_URL=http://fbf-cde-card-linking-app-sdk-cde.localhost/iframe
+APP_URL=http://ls-cde-card-linking-app-sdk-cde.localhost/iframe
 ```
 
 ## Project Structure
@@ -175,7 +175,7 @@ For the interactive script (`jwe.sh`):
   "iat": 1640995200,           // Issued at (Unix timestamp)
   "nbf": 1640995200,           // Not before (Unix timestamp)  
   "exp": 1640998800,           // Expires at (Unix timestamp)
-  "iss": "FBF",                // Issuer
+  "iss": "LS",                // Issuer
   "aud": "Audience",           // Audience
   "sub": "USER_EXTERNAL_ID"    // Subject (user's external ID)
 }
