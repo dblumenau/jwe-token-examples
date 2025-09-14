@@ -88,9 +88,10 @@ handle_nodejs() {
     echo "What would you like to do?"
     echo ""
     echo "  1) Generate a JWE token"
-    echo "  2) Back to main menu"
+    echo "  2) Decrypt & verify a JWE token"
+    echo "  3) Back to main menu"
     echo ""
-    read -p "Enter your choice (1-2): " choice
+    read -p "Enter your choice (1-3): " choice
     
     case $choice in
         1)
@@ -114,6 +115,43 @@ handle_nodejs() {
             read -p "Press any key to continue..."
             ;;
         2)
+            print_color $YELLOW "\nDecrypting JWE token using Node.js..."
+            cd "$SCRIPT_DIR/node"
+
+            # Check for all required key files for decryption
+            local missing_keys=()
+            if [ ! -f "jwt_signing_private.pem" ]; then missing_keys+=("jwt_signing_private.pem"); fi
+            if [ ! -f "jwt_encryption_public.pem" ]; then missing_keys+=("jwt_encryption_public.pem"); fi
+            if [ ! -f "jwt_signing_public.pem" ]; then missing_keys+=("jwt_signing_public.pem"); fi
+            if [ ! -f "jwt_encryption_private.pem" ]; then missing_keys+=("jwt_encryption_private.pem"); fi
+
+            if [ ${#missing_keys[@]} -ne 0 ]; then
+                print_color $RED "Error: Missing key files required for decryption!"
+                echo "Required files in node directory:"
+                for key in "${missing_keys[@]}"; do
+                    echo "  - $key"
+                done
+                echo ""
+                print_color $YELLOW "To generate missing keys, see the README.md file."
+                read -p "Press any key to continue..."
+                return
+            fi
+
+            echo ""
+            echo "Enter the JWE token to decrypt (paste the full token):"
+            echo ""
+            read -p "Token: " jwe_token
+            echo ""
+
+            if [ -z "$jwe_token" ]; then
+                print_color $RED "Error: No token provided!"
+            else
+                node example_jwe_generation.js --decrypt "$jwe_token"
+            fi
+            echo ""
+            read -p "Press any key to continue..."
+            ;;
+        3)
             return
             ;;
         *)

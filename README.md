@@ -140,6 +140,36 @@ For the interactive script (`jwe.sh`):
 - RSA key pair for encryption (RSA-OAEP-256)
 - Keys should be in PEM format
 
+#### Generating Required Keys
+
+You need to create 4 key files using OpenSSL. These commands will generate two key pairs - one for signing JWTs and one for encrypting JWE tokens:
+
+**For JWT signing:**
+```bash
+# Create private key for signing JWTs (keep this secret!)
+openssl genrsa -out jwt_signing_private.pem 2048
+
+# Extract public key for verifying JWTs (this can be shared)
+openssl rsa -in jwt_signing_private.pem -pubout -out jwt_signing_public.pem
+```
+
+**For JWE encryption:**
+```bash
+# Create private key for decrypting JWE tokens (keep this secret!)
+openssl genrsa -out jwt_encryption_private.pem 2048
+
+# Extract public key for encrypting JWE tokens (this can be shared)
+openssl rsa -in jwt_encryption_private.pem -pubout -out jwt_encryption_public.pem
+```
+
+After running these commands, you'll have:
+- `jwt_signing_private.pem` - Used to sign JWTs (keep secret)
+- `jwt_signing_public.pem` - Used to verify JWTs (can be public)
+- `jwt_encryption_private.pem` - Used to decrypt JWE tokens (keep secret)
+- `jwt_encryption_public.pem` - Used to encrypt JWE tokens (can be public)
+
+The code examples use `jwt_signing_private.pem` and `jwt_encryption_public.pem` to create tokens.
+
 #### C# Requirements
 - .NET 5.0 or later (install via `brew install dotnet-sdk`)
 - No external packages needed
