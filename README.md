@@ -142,9 +142,9 @@ For the interactive script (`jwe.sh`):
 
 #### Generating Required Keys
 
-You need to create 4 key files using OpenSSL. These commands will generate two key pairs - one for signing JWTs and one for encrypting JWE tokens:
+You need to create 4 key files using OpenSSL. These commands will generate two key pairs - one for signing JWTs and one for encrypting JWE tokens.
 
-**For JWT signing:**
+**Step 1: Generate JWT Signing Keys**
 ```bash
 # Create private key for signing JWTs (keep this secret!)
 openssl genrsa -out jwt_signing_private.pem 2048
@@ -153,7 +153,7 @@ openssl genrsa -out jwt_signing_private.pem 2048
 openssl rsa -in jwt_signing_private.pem -pubout -out jwt_signing_public.pem
 ```
 
-**For JWE encryption:**
+**Step 2: Generate JWE Encryption Keys**
 ```bash
 # Create private key for decrypting JWE tokens (keep this secret!)
 openssl genrsa -out jwt_encryption_private.pem 2048
@@ -162,13 +162,133 @@ openssl genrsa -out jwt_encryption_private.pem 2048
 openssl rsa -in jwt_encryption_private.pem -pubout -out jwt_encryption_public.pem
 ```
 
-After running these commands, you'll have:
-- `jwt_signing_private.pem` - Used to sign JWTs (keep secret)
-- `jwt_signing_public.pem` - Used to verify JWTs (can be public)
-- `jwt_encryption_private.pem` - Used to decrypt JWE tokens (keep secret)
-- `jwt_encryption_public.pem` - Used to encrypt JWE tokens (can be public)
+**Step 3: Place Keys in Correct Directories**
+```bash
+# For Node.js examples - copy all 4 files to node directory
+cp jwt_*.pem node/
 
-The code examples use `jwt_signing_private.pem` and `jwt_encryption_public.pem` to create tokens.
+# For C# examples - copy all 4 files to csharp directories
+cp jwt_*.pem csharp/JWEGenerator/
+cp jwt_*.pem csharp/JWETokenAnalyzer/
+```
+
+**Step 4: Verify Key Generation**
+```bash
+# Verify the keys were generated correctly
+ls -la jwt_*.pem
+# Should show 4 files:
+# jwt_signing_private.pem (1700+ bytes)
+# jwt_signing_public.pem (~450 bytes)
+# jwt_encryption_private.pem (1700+ bytes)
+# jwt_encryption_public.pem (~450 bytes)
+
+# Test that public keys were derived from private keys correctly
+openssl rsa -in jwt_signing_private.pem -pubout -noout -text | head -n2
+openssl rsa -in jwt_encryption_private.pem -pubout -noout -text | head -n2
+```
+
+**Key Summary:**
+- `jwt_signing_private.pem` - Signs JWTs with RS256 (keep secret)
+- `jwt_signing_public.pem` - Verifies JWT signatures (can be public)
+- `jwt_encryption_private.pem` - Decrypts JWE tokens with RSA-OAEP-256 (keep secret)
+- `jwt_encryption_public.pem` - Encrypts JWE tokens with RSA-OAEP-256 (can be public)
+
+### Key Usage in Code
+
+Understanding exactly how each key is used in the code helps clarify the dual key-pair architecture:
+
+#### Token Generation Flow (Encoding)
+1. **JWT Signing** - Creates the inner signed token
+2. **JWE Encryption** - Encrypts the JWT into a JWE token
+
+#### Token Decryption Flow (Decoding)
+1. **JWE Decryption** - Decrypts the outer JWE to reveal the inner JWT
+2. **JWT Verification** - Verifies the JWT signature and extracts payload
+
+#### Constructor Usage
+```javascript
+// For token generation only
+const generator = new NodeJWEGenerator(
+    'jwt_signing_private.pem',      // Signs JWTs
+    'jwt_encryption_public.pem'     // Encrypts JWE
+);
+
+// For full encode/decode functionality
+const generator = new NodeJWEGenerator(
+    'jwt_signing_private.pem',      // Signs JWTs
+    'jwt_encryption_public.pem',    // Encrypts JWE
+    'jwt_signing_public.pem',       // Verifies JWTs
+    'jwt_encryption_private.pem'    // Decrypts JWE
+);
+```
+
+#### Key Usage Examples
+
+**1. JWT Signing (node/example_jwe_generation.js:86-88)**
+```javascript
+// Sign with RS256 (SHA256 + RSA PKCS1 v1.5 padding)
+const signature = crypto.sign('sha256', Buffer.from(signatureBase), {
+    key: this.signingPrivateKey,        // jwt_signing_private.pem
+    padding: crypto.constants.RSA_PKCS1_PADDING
+});
+```
+
+**2. JWE Encryption (node/example_jwe_generation.js:114-117)**
+```javascript
+// Encrypt the CEK with RSA-OAEP-256
+const encryptedKey = crypto.publicEncrypt({
+    key: this.encryptionPublicKey,      // jwt_encryption_public.pem
+    padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+    oaepHash: 'sha256'
+}, cek);
+```
+
+**3. JWE Decryption (node/example_jwe_generation.js:171-174)**
+```javascript
+// Decrypt the Content Encryption Key (CEK) with RSA-OAEP-256
+const cek = crypto.privateDecrypt({
+    key: this.decryptionPrivateKey,     // jwt_encryption_private.pem
+    padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+    oaepHash: 'sha256'
+}, encryptedKey);
+```
+
+**4. JWT Verification (node/example_jwe_generation.js:218-220)**
+```javascript
+// Verify JWT signature
+const isValid = crypto.verify('sha256', Buffer.from(signatureBase), {
+    key: this.verificationPublicKey,    // jwt_signing_public.pem
+    padding: crypto.constants.RSA_PKCS1_PADDING
+}, signature);
+```
+
+#### Visual Flow Diagram
+```
+TOKEN GENERATION:
+[Payload]
+    ↓ Sign with jwt_signing_private.pem (RS256)
+[Signed JWT]
+    ↓ Encrypt with jwt_encryption_public.pem (RSA-OAEP-256 + A256GCM)
+[JWE Token]
+
+TOKEN DECRYPTION:
+[JWE Token]
+    ↓ Decrypt with jwt_encryption_private.pem (RSA-OAEP-256 + A256GCM)
+[Signed JWT]
+    ↓ Verify with jwt_signing_public.pem (RS256)
+[Payload]
+```
+
+#### Why Two Key Pairs?
+
+**Separation of Concerns:**
+- **Signing Keys** - Prove authenticity (who created the token)
+- **Encryption Keys** - Ensure confidentiality (only intended recipients can read it)
+
+**Security Benefits:**
+- Different keys can have different lifecycles
+- Signing keys can be rotated independently of encryption keys
+- Supports scenarios where different entities handle signing vs encryption
 
 #### C# Requirements
 - .NET 5.0 or later (install via `brew install dotnet-sdk`)
@@ -281,7 +401,88 @@ The analyzer provides:
 
 ## Troubleshooting
 
+### Common Key-Related Issues
+
+#### 1. "Key file not found" errors
+**Problem**: Missing key files in the expected directories
+**Solution**:
+```bash
+# Check if keys exist in the right location
+ls -la node/jwt_*.pem
+ls -la csharp/JWEGenerator/jwt_*.pem
+
+# If missing, copy from root directory
+cp jwt_*.pem node/
+cp jwt_*.pem csharp/JWEGenerator/
+cp jwt_*.pem csharp/JWETokenAnalyzer/
+```
+
+#### 2. "RSA OAEP decoding error"
+**Problem**: Trying to decrypt with mismatched keys
+**Cause**: The encryption public key doesn't match the decryption private key
+**Solution**:
+```bash
+# Regenerate matching key pair
+openssl genrsa -out jwt_encryption_private.pem 2048
+openssl rsa -in jwt_encryption_private.pem -pubout -out jwt_encryption_public.pem
+
+# Copy to directories and regenerate tokens
+cp jwt_*.pem node/
+```
+
+#### 3. "Invalid JWS signature" errors
+**Problem**: JWT verification fails
+**Cause**: The signing private key doesn't match the verification public key
+**Solution**:
+```bash
+# Regenerate matching key pair
+openssl genrsa -out jwt_signing_private.pem 2048
+openssl rsa -in jwt_signing_private.pem -pubout -out jwt_signing_public.pem
+
+# Copy to directories
+cp jwt_*.pem node/
+```
+
+#### 4. Verify Key Pairs Match
+**Check that your key pairs are correctly matched**:
+```bash
+# For signing keys - these should produce identical output
+openssl rsa -in jwt_signing_private.pem -pubout | openssl sha256
+openssl rsa -pubin -in jwt_signing_public.pem -pubout | openssl sha256
+
+# For encryption keys - these should produce identical output
+openssl rsa -in jwt_encryption_private.pem -pubout | openssl sha256
+openssl rsa -pubin -in jwt_encryption_public.pem -pubout | openssl sha256
+```
+
+#### 5. File Permission Issues
+**Problem**: "Permission denied" when reading key files
+**Solution**:
+```bash
+# Set appropriate permissions
+chmod 600 jwt_*_private.pem  # Private keys - owner read/write only
+chmod 644 jwt_*_public.pem   # Public keys - owner read/write, others read
+```
+
+### General Troubleshooting
+
 1. **Missing dependencies**: Run `./jwe.sh` which will check and offer to install them
-2. **Key file errors**: Ensure PEM files are in the correct directories
+2. **Key file errors**: See key-related issues above
 3. **.env not loading**: Check file exists in root directory and has proper format
 4. **Token validation errors**: Use the C# analyzer to debug token structure
+5. **Interactive script issues**: Ensure all 4 key files exist in the node/ directory before running `./jwe.sh`
+
+### Testing Your Setup
+
+**Generate and immediately decrypt a token to verify everything works**:
+```bash
+cd node
+
+# Generate a test token
+TOKEN=$(node example_jwe_generation.js test-user | grep "Generated JWE Token:" -A1 | tail -n1)
+
+# Decrypt the same token
+node example_jwe_generation.js --decrypt "$TOKEN"
+
+# Should show the original payload with subject "test-user"
+```
