@@ -18,6 +18,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
 // Simple .env file loader (since we're not using npm packages)
 function loadEnv() {
@@ -352,8 +353,8 @@ try {
             iat: now,                    // Issued at
             nbf: now,                    // Not before
             exp: now + 3600,             // Expires in 1 hour
-            iss: 'ISSUER',               // Issuer
-            aud: 'AUDIENCE',             // Audience
+            iss: process.env.JWT_ISSUER || 'ISSUER',               // Issuer
+            aud: process.env.JWT_AUDIENCE || 'AUDIENCE',             // Audience
             sub: subject,                // Subject (external ID)
         };
 

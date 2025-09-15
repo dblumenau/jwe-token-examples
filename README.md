@@ -68,17 +68,20 @@ node example_jwe_generation.js --help
 
 ### Environment Variables
 
-Create a `.env` file in the root directory to configure the endpoint URL:
+Create a `.env` file in the root directory to configure the application:
 
 ```bash
 # Copy the example file
 cp .env.example .env
 
-# Edit .env to set your endpoint
-APP_URL=https://your-endpoint.com
+# Edit .env to set your configuration
 ```
 
-If `APP_URL` is not set or is empty, the system will fall back to `https://example.com`.
+Available environment variables:
+
+- `APP_URL`: The URL endpoint for testing JWE tokens (defaults to `https://example.com`)
+- `JWT_ISSUER`: The issuer claim for JWT tokens (defaults to `ISSUER`)
+- `JWT_AUDIENCE`: The audience claim for JWT tokens (defaults to `AUDIENCE`)
 
 ### Example .env
 
@@ -88,6 +91,13 @@ If `APP_URL` is not set or is empty, the system will fall back to `https://examp
 # The URL endpoint for testing JWE tokens
 # Leave empty to use default fallback (https://example.com)
 APP_URL=http://ls-cde-card-linking-app-sdk-cde.localhost/iframe
+
+# JWT Claims Configuration
+# Issuer - who issued the token
+JWT_ISSUER=ISSUER
+
+# Audience - who the token is intended for
+JWT_AUDIENCE=AUDIENCE
 ```
 
 ## Project Structure
