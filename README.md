@@ -64,6 +64,29 @@ node example_jwe_generation.js 1234567890
 node example_jwe_generation.js --help
 ```
 
+#### TypeScript
+```bash
+cd ts
+
+# Install dependencies (first run only)
+npm install
+
+# Generate JWE token with default subject
+npx ts-node example_jwe_generation.ts
+
+# Generate JWE token with custom subject
+npx ts-node example_jwe_generation.ts 1234567890
+
+# Decrypt and verify an existing token
+npx ts-node example_jwe_generation.ts --decrypt "<JWE token>"
+
+# Compile to JavaScript
+npm run build
+
+# Show help
+npx ts-node example_jwe_generation.ts --help
+```
+
 ## Configuration
 
 ### Environment Variables
@@ -111,8 +134,13 @@ jwe-token-examples/
 │   ├── JWETokenExamples.sln
 │   ├── JWEGenerator/    # Token generation
 │   └── JWETokenAnalyzer/ # Token analysis and comparison
-└── node/                # Node.js implementation
-    └── example_jwe_generation.js
+├── node/                # Node.js implementation
+│   └── example_jwe_generation.js
+└── ts/                  # TypeScript implementation
+    ├── example_jwe_generation.ts
+    ├── package.json
+    ├── package-lock.json
+    └── tsconfig.json
 ```
 
 ## Examples Included
@@ -131,6 +159,13 @@ jwe-token-examples/
 - Features:
   - JWE token generation
   - Simple and straightforward implementation
+
+### ✅ TypeScript - **WORKS**
+- **File**: `ts/example_jwe_generation.ts`
+- Features:
+  - Strongly typed JWE/JWS implementation mirroring production flow
+  - Supports both generation and decrypt/verify paths
+  - One-to-one parity with the Node.js command-line interface
 
 ### ❌ PHP - **LIMITATION**
 - PHP's OpenSSL extension doesn't support RSA-OAEP-256 (only RSA-OAEP with SHA-1)
